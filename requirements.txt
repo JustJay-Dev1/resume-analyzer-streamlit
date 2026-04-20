@@ -1,4 +1,6 @@
 streamlit
 transformers==4.41.2
-torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
 PyPDF2
+
+# Force CPU-only torch
+torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
