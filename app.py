@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import PyPDF2
-import time
 
 # ---------------- CONFIG ---------------- #
 
@@ -13,26 +12,21 @@ headers = {
 
 # ---------------- FUNCTIONS ---------------- #
 
-def query(payload):
-    for _ in range(3):  # retry 3 times
-        response = requests.post(API_URL, headers=headers, json=payload)
+def query(prompt):
+    payload = {"inputs": prompt}
 
-        # Try parsing JSON safely
-        try:
-            result = response.json()
-        except:
-            return {"error": response.text}
+    response = requests.post(API_URL, headers=headers, json=payload)
 
-        # Handle model loading case
-        if isinstance(result, dict) and "error" in result:
-            if "loading" in result["error"].lower():
-                time.sleep(5)
-                continue
-            return {"error": result["error"]}
+    # Handle API errors
+    if response.status_code != 200:
+        return {"error": response.text}
 
-        return result
+    try:
+        result = response.json()
+    except:
+        return {"error": response.text}
 
-    return {"error": "Model is still loading. Please try again."}
+    return result
 
 
 def extract_text_from_pdf(file):
@@ -48,17 +42,9 @@ def extract_text_from_pdf(file):
 def analyze_resume(text):
     text = text[:1500]
 
-    summary = query({
-        "inputs": f"Summarize this resume:\n{text}"
-    })
-
-    skills = query({
-        "inputs": f"Extract key skills from this resume:\n{text}"
-    })
-
-    suggestions = query({
-        "inputs": f"Give improvement suggestions for this resume:\n{text}"
-    })
+    summary = query(f"Summarize this resume:\n{text}")
+    skills = query(f"Extract key skills from this resume:\n{text}")
+    suggestions = query(f"Give improvement suggestions for this resume:\n{text}")
 
     return summary, skills, suggestions
 
@@ -72,7 +58,6 @@ def extract_output(res):
 
     return str(res)
 
-
 # ---------------- UI ---------------- #
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄")
@@ -84,7 +69,6 @@ uploaded_file = st.file_uploader("Upload Resume", type=["txt", "pdf"])
 
 analyze_btn = st.button("🚀 Analyze Resume")
 
-# Output placeholders
 summary_box = st.empty()
 skills_box = st.empty()
 suggestions_box = st.empty()
@@ -105,7 +89,7 @@ if analyze_btn:
             # Analyze
             summary, skills, suggestions = analyze_resume(text)
 
-            # Display results
+            # Display
             summary_box.subheader("📄 Summary")
             summary_box.write(extract_output(summary))
 
