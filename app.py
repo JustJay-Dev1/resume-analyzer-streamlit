@@ -5,7 +5,7 @@ import time
 
 # ---------------- CONFIG ---------------- #
 
-API_URL = "https://router.huggingface.co/hf-inference/models/google/flan-t5-small"
+API_URL = "https://router.huggingface.co/hf-inference/models/HuggingFaceH4/zephyr-7b-beta"
 
 headers = {
     "Authorization": f"Bearer {st.secrets['HF_TOKEN']}"
