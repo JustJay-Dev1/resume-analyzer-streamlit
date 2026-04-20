@@ -11,7 +11,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-MODEL = "openchat/openchat-7b"
+MODEL = "meta-llama/llama-3-8b-instruct"
 
 # ---------------- FUNCTIONS ---------------- #
 
