@@ -4,34 +4,33 @@ import PyPDF2
 
 # ---------------- CONFIG ---------------- #
 
-API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 headers = {
-    "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+    "Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}",
     "Content-Type": "application/json"
 }
+
+MODEL = "mistralai/mistral-7b-instruct"
 
 # ---------------- FUNCTIONS ---------------- #
 
 def query(prompt):
     payload = {
-        "inputs": prompt,
-        "options": {"wait_for_model": True}
+        "model": MODEL,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
     }
 
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
-
-        # If still HTML error → catch it
-        if "text/html" in response.headers.get("content-type", ""):
-            return {"error": "API endpoint blocked or incorrect."}
-
         result = response.json()
 
-        if isinstance(result, dict) and "error" in result:
-            return {"error": result["error"]}
+        if "error" in result:
+            return {"error": result["error"]["message"]}
 
-        return result
+        return result["choices"][0]["message"]["content"]
 
     except Exception as e:
         return {"error": str(e)}
@@ -53,16 +52,6 @@ def analyze_resume(text):
     suggestions = query(f"Give improvement suggestions for this resume:\n{text}")
 
     return summary, skills, suggestions
-
-
-def extract_output(res):
-    if isinstance(res, dict) and "error" in res:
-        return f"⚠️ {res['error']}"
-
-    if isinstance(res, list):
-        return res[0].get("generated_text", str(res))
-
-    return str(res)
 
 
 # ---------------- UI ---------------- #
@@ -89,12 +78,12 @@ if st.button("🚀 Analyze Resume"):
             summary, skills, suggestions = analyze_resume(text)
 
             st.subheader("📄 Summary")
-            st.write(extract_output(summary))
+            st.write(summary)
 
             st.subheader("💡 Skills")
-            st.write(extract_output(skills))
+            st.write(skills)
 
             st.subheader("📊 Suggestions")
-            st.write(extract_output(suggestions))
+            st.write(suggestions)
 
-            st.success("Analysis complete!")
+            st.success("✅ Analysis complete!")
