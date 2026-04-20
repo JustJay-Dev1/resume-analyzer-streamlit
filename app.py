@@ -1,5 +1,6 @@
 import streamlit as st
 from transformers import pipeline
+import PyPDF2
 
 # ---------------- LOAD MODELS ---------------- #
 
@@ -11,16 +12,17 @@ def load_models():
 
 qa_pipeline, summarizer = load_models()
 
-# ---------------- UI ---------------- #
+# ---------------- FUNCTIONS ---------------- #
 
-st.set_page_config(page_title="Resume Analyzer", page_icon="📄")
+def extract_text_from_pdf(file):
+    reader = PyPDF2.PdfReader(file)
+    text = ""
 
-st.title("📄 AI Resume Analyzer")
-st.write("Upload your resume → Get summary, skills & suggestions")
+    for page in reader.pages:
+        text += page.extract_text() or ""
 
-uploaded_file = st.file_uploader("Upload Resume (.txt only)", type=["txt"])
+    return text
 
-# ---------------- FUNCTION ---------------- #
 
 def analyze_resume(text):
     text = text[:1500]
@@ -35,13 +37,23 @@ def analyze_resume(text):
 
     return summary, skills, suggestions
 
-# ---------------- BUTTON ---------------- #
+# ---------------- UI ---------------- #
+
+st.title("📄 AI Resume Analyzer")
+st.write("Upload your resume (.txt or .pdf)")
+
+uploaded_file = st.file_uploader("Upload Resume", type=["txt", "pdf"])
 
 if uploaded_file is not None:
     if st.button("Analyze Resume"):
 
         with st.spinner("Analyzing..."):
-            text = uploaded_file.read().decode("utf-8")
+
+            # Detect file type
+            if uploaded_file.type == "application/pdf":
+                text = extract_text_from_pdf(uploaded_file)
+            else:
+                text = uploaded_file.read().decode("utf-8")
 
             summary, skills, suggestions = analyze_resume(text)
 
