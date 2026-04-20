@@ -1,13 +1,23 @@
 import streamlit as st
 from transformers import pipeline
 import PyPDF2
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # ---------------- LOAD MODELS ---------------- #
 
 @st.cache_resource
 def load_models():
-    qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-small")
-    summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
+    qa_pipeline = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-small",
+    device=-1  # FORCE CPU
+)
+    summarizer = pipeline(
+    "summarization",
+    model="sshleifer/distilbart-cnn-12-6",
+    device=-1
+)
     return qa_pipeline, summarizer
 
 qa_pipeline, summarizer = load_models()
