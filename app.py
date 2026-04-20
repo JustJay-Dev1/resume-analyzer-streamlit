@@ -11,7 +11,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-MODEL = "mistralai/mistral-7b-instruct"
+MODEL = "openchat/openchat-7b"
 
 # ---------------- FUNCTIONS ---------------- #
 
