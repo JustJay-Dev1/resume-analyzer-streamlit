@@ -7,35 +7,41 @@ import PyPDF2
 API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
 headers = {
-    "Authorization": f"Bearer {st.secrets['HF_TOKEN']}"
+    "Authorization": f"Bearer {st.secrets['HF_TOKEN']}",
+    "Content-Type": "application/json"
 }
 
 # ---------------- FUNCTIONS ---------------- #
 
 def query(prompt):
-    payload = {"inputs": prompt}
-
-    response = requests.post(API_URL, headers=headers, json=payload)
-
-    # Handle API errors
-    if response.status_code != 200:
-        return {"error": response.text}
+    payload = {
+        "inputs": prompt,
+        "options": {"wait_for_model": True}
+    }
 
     try:
-        result = response.json()
-    except:
-        return {"error": response.text}
+        response = requests.post(API_URL, headers=headers, json=payload)
 
-    return result
+        # If still HTML error → catch it
+        if "text/html" in response.headers.get("content-type", ""):
+            return {"error": "API endpoint blocked or incorrect."}
+
+        result = response.json()
+
+        if isinstance(result, dict) and "error" in result:
+            return {"error": result["error"]}
+
+        return result
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def extract_text_from_pdf(file):
     reader = PyPDF2.PdfReader(file)
     text = ""
-
     for page in reader.pages:
         text += page.extract_text() or ""
-
     return text
 
 
@@ -58,45 +64,37 @@ def extract_output(res):
 
     return str(res)
 
+
 # ---------------- UI ---------------- #
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄")
 
 st.title("📄 AI Resume Analyzer")
-st.markdown("### Upload your resume and get smart insights")
+st.markdown("Upload your resume and get smart insights")
 
 uploaded_file = st.file_uploader("Upload Resume", type=["txt", "pdf"])
 
-analyze_btn = st.button("🚀 Analyze Resume")
-
-summary_box = st.empty()
-skills_box = st.empty()
-suggestions_box = st.empty()
-
-if analyze_btn:
+if st.button("🚀 Analyze Resume"):
 
     if uploaded_file is None:
-        st.warning("⚠️ Please upload a resume first!")
+        st.warning("Please upload a resume first!")
     else:
         with st.spinner("Analyzing..."):
 
-            # Read file
             if uploaded_file.type == "application/pdf":
                 text = extract_text_from_pdf(uploaded_file)
             else:
                 text = uploaded_file.read().decode("utf-8")
 
-            # Analyze
             summary, skills, suggestions = analyze_resume(text)
 
-            # Display
-            summary_box.subheader("📄 Summary")
-            summary_box.write(extract_output(summary))
+            st.subheader("📄 Summary")
+            st.write(extract_output(summary))
 
-            skills_box.subheader("💡 Skills")
-            skills_box.write(extract_output(skills))
+            st.subheader("💡 Skills")
+            st.write(extract_output(skills))
 
-            suggestions_box.subheader("📊 Suggestions")
-            suggestions_box.write(extract_output(suggestions))
+            st.subheader("📊 Suggestions")
+            st.write(extract_output(suggestions))
 
-            st.success("✅ Analysis complete!")
+            st.success("Analysis complete!")
