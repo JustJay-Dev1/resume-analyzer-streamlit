@@ -39,6 +39,9 @@ def analyze_resume(text):
 
 # ---------------- UI ---------------- #
 
+st.title("📄 AI Resume Analyzer")
+st.write("Upload your resume (.txt or .pdf)")
+
 uploaded_file = st.file_uploader("Upload Resume", type=["txt", "pdf"])
 
 analyze_btn = st.button("🚀 Analyze Resume")
